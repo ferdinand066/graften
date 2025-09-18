@@ -1,0 +1,128 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  /* Radius */
+  --radius: 0.625rem;
+
+  /* 70-20-10 Color Scheme: Red, White, Black */
+
+  /* Custom Color Palette */
+  --color-primary-50: #fef2f2;    /* Very light red */
+  --color-primary-100: #fee2e2;   /* Light red */
+  --color-primary-200: #fecaca;   /* Lighter red */
+  --color-primary-300: #fca5a5;   /* Medium light red */
+  --color-primary-400: #f87171;   /* Medium red */
+  --color-primary-500: #ef4444;   /* Standard red */
+  --color-primary-600: #dc2626;   /* Dark red */
+  --color-primary-700: #b91c1c;   /* Darker red */
+  --color-primary-800: #991b1b;   /* Very dark red */
+  --color-primary-900: #7f1d1d;   /* Darkest red */
+
+  --color-accent-800: #1f2937;    /* Dark gray */
+  --color-accent-900: #111827;    /* Very dark gray */
+  --color-accent-black: #000000;  /* Pure black */
+  --color-accent-charcoal: #1a1a1a; /* Charcoal */
+
+  /* Standard Tailwind Color Variables */
+  --color-primary: var(--color-primary-600);           /* Main brand color */
+  --color-primary-foreground: #ffffff;                 /* Text on primary */
+  --color-secondary: var(--color-primary-50);          /* Light background */
+  --color-secondary-foreground: var(--color-primary-900); /* Text on secondary */
+  --color-accent: var(--color-accent-black);           /* High contrast */
+  --color-accent-foreground: #ffffff;                  /* Text on accent */
+  --color-muted: var(--color-primary-100);             /* Subtle background */
+  --color-muted-foreground: #6b7280;                   /* Subtle text */
+  --color-destructive: var(--color-primary-600);       /* Error color */
+  --color-destructive-foreground: #ffffff;             /* Text on destructive */
+  --color-border: var(--color-primary-200);            /* Border color */
+  --color-input: var(--color-primary-200);             /* Input border */
+  --color-ring: var(--color-primary-600);              /* Focus ring */
+  --color-background: #ffffff;                         /* Page background */
+  --color-foreground: var(--color-accent-black);       /* Main text */
+  --color-card: #ffffff;                               /* Card background */
+  --color-card-foreground: var(--color-accent-black);  /* Card text */
+  --color-popover: #ffffff;                            /* Popover background */
+  --color-popover-foreground: var(--color-accent-black); /* Popover text */
+}
+
+:root {
+  /* Traditional CSS variables for compatibility with UI libraries */
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --popover: var(--color-popover);
+  --popover-foreground: var(--color-popover-foreground);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-foreground);
+  --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-destructive-foreground);
+  --border: var(--color-border);
+  --input: var(--color-input);
+  --ring: var(--color-ring);
+}
+
+.dark {
+  /* Dark mode overrides for color variables */
+  --color-primary: var(--color-primary-500);           /* Brighter red for dark mode */
+  --color-primary-foreground: #ffffff;                 /* White text on primary */
+  --color-secondary: #1f2937;                          /* Dark background */
+  --color-secondary-foreground: #f9fafb;               /* Light text on secondary */
+  --color-accent: #ffffff;                             /* White for high contrast */
+  --color-accent-foreground: var(--color-accent-black); /* Black text on white */
+  --color-muted: #374151;                              /* Dark muted background */
+  --color-muted-foreground: #9ca3af;                   /* Light muted text */
+  --color-destructive: var(--color-primary-500);       /* Same red for errors */
+  --color-destructive-foreground: #ffffff;             /* White text on destructive */
+  --color-border: #374151;                             /* Dark border */
+  --color-input: #374151;                              /* Dark input border */
+  --color-ring: var(--color-primary-500);              /* Red focus ring */
+  --color-background: var(--color-accent-black);       /* Black background */
+  --color-foreground: #ffffff;                         /* White text */
+  --color-card: #1f2937;                               /* Dark card background */
+  --color-card-foreground: #ffffff;                    /* White card text */
+  --color-popover: #1f2937;                            /* Dark popover background */
+  --color-popover-foreground: #ffffff;                 /* White popover text */
+
+  /* Traditional CSS variables for compatibility (inherit from color variables) */
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
+  --card: var(--color-card);
+  --card-foreground: var(--color-card-foreground);
+  --popover: var(--color-popover);
+  --popover-foreground: var(--color-popover-foreground);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --secondary: var(--color-secondary);
+  --secondary-foreground: var(--color-secondary-foreground);
+  --muted: var(--color-muted);
+  --muted-foreground: var(--color-muted-foreground);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-foreground);
+  --destructive: var(--color-destructive);
+  --destructive-foreground: var(--color-destructive-foreground);
+  --border: var(--color-border);
+  --input: var(--color-input);
+  --ring: var(--color-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

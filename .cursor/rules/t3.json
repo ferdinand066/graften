@@ -1,0 +1,31 @@
+{
+    "project": "T3 Stack Application",
+    "tech": [
+      "Next.js 14 (App Router)",
+      "TypeScript (strict mode)",
+      "tRPC",
+      "Prisma (MySQL or PostgreSQL)",
+      "TailwindCSS",
+      "NextAuth.js",
+      "shadcn/ui"
+    ],
+    "rules": [
+      "Always use TypeScript with strict typing enabled.",
+      "Use tRPC for API calls instead of REST.",
+      "Use Prisma Client for all database access, based on schema.prisma.",
+      "Use TailwindCSS for styling (avoid inline styles and CSS modules).",
+      "Prefer shadcn/ui components (Button, Card, Input, Dialog, DropdownMenu, etc.) for UI instead of custom Tailwind markup.",
+      "When using shadcn/ui components, import them from '@/components/ui/[component]'.",
+      "Implement authentication with NextAuth.js (including session checks).",
+      "Validate all inputs with Zod in tRPC procedures.",
+      "Use atomic design for React components (atoms, molecules, organisms, templates, pages).",
+      "Use React Server Components when possible, Client Components only if interactivity is required.",
+      "Use TanStack Query for client-side caching and fetching where applicable.",
+      "Follow clean architecture: keep business logic in server/api, UI logic in components.",
+      "Follow accessibility best practices (aria attributes, semantic HTML).",
+      "Always use 2 spaces for indentation.",
+      "Do not use tabs for indentation.",
+      "Follow Prettier config in .prettierrc for formatting.",
+      "Keep consistent code style with ESLint and Prettier."
+    ]
+  }

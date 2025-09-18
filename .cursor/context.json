@@ -1,0 +1,18 @@
+{
+    "schemas": [
+      "prisma/schema.prisma"
+    ],
+    "docs": [
+      "README.md",
+      "docs/architecture.md"
+    ],
+    "configs": [
+      "tailwind.config.ts",
+      "next.config.mjs",
+      "tsconfig.json"
+    ],
+    "ui": [
+      "src/components/ui"
+    ]
+  }
+  
