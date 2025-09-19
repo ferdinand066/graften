@@ -12,12 +12,16 @@ import { DeleteConfirmationDialog } from "../delete-confirmation-dialog";
 import { useItemMutations } from "./use-item-mutations";
 import { type CreateItemInput } from "schema/item.schema";
 import type { ItemModel } from "types/item";
+import { DataPagination } from "@/app/_components/pages/data-pagination";
 
 export function ItemManagement() {
   const [isCreating, setIsCreating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const { data: itemsData, isLoading } = api.item.getAll.useQuery({
-    limit: 50,
+    limit: itemsPerPage,
+    page: currentPage,
   });
 
   const {
@@ -35,6 +39,7 @@ export function ItemManagement() {
   } = useItemMutations(() => setIsCreating(false));
 
   const items = itemsData?.items ?? [];
+  const pagination = itemsData?.pagination;
 
   const handleFormCancel = () => {
     handleCancel();
@@ -51,6 +56,10 @@ export function ItemManagement() {
     if (!editingItem) {
       setIsCreating(false);
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -83,23 +92,32 @@ export function ItemManagement() {
           isSubmitting={isSubmitting}
         />
       ) : (
-        <CardTable
-          data={items as ItemModel[]}
-          loading={isLoading}
-          emptyState={
-            <ItemEmptyState setIsCreating={setIsCreating} />
-          }
-          renderItem={(item) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              isCreating={isCreating}
-              handleEdit={handleEditItem}
-              handleDelete={handleDelete}
-              isDeleting={deleteItem.isPending && itemToDelete?.id === item.id}
+        <>
+          <CardTable
+            data={items as ItemModel[]}
+            loading={isLoading}
+            emptyState={
+              <ItemEmptyState setIsCreating={setIsCreating} />
+            }
+            renderItem={(item) => (
+              <ItemCard
+                key={item.id}
+                item={item}
+                isCreating={isCreating}
+                handleEdit={handleEditItem}
+                handleDelete={handleDelete}
+                isDeleting={deleteItem.isPending && itemToDelete?.id === item.id}
+              />
+            )}
+          />
+
+          {pagination && (
+            <DataPagination
+              pagination={pagination}
+              onPageChange={handlePageChange}
             />
           )}
-        />
+        </>
       )}
 
       <DeleteConfirmationDialog

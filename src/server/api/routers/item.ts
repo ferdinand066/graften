@@ -6,22 +6,12 @@ import {
   protectedProcedure,
   publicProcedure
 } from "@/server/api/trpc";
+import { createItemSchema, updateItemSchema } from "schema/item.schema";
+import { executePaginatedQuery } from "@/server/utils/pagination";
 
 export const itemRouter = createTRPCRouter({
   create: adminProcedure
-    .input(
-      z.object({
-        name: z.string().min(1, "Name is required"),
-        description: z.string().optional(),
-        price: z.number().min(0).optional(),
-        minimumQuantity: z.number().int().min(0).default(0),
-        maximumQuantity: z.number().int().min(0).optional(),
-        circulation: z.number().int().min(0).default(0),
-        status: z.number().int().min(0).default(1),
-        conditionalFields: z.any().optional(),
-        categoryId: z.string().min(1, "Category is required"),
-      }),
-    )
+    .input(createItemSchema)
     .mutation(async ({ ctx, input }) => {
       return ctx.db.item.create({
         data: {
@@ -32,7 +22,7 @@ export const itemRouter = createTRPCRouter({
           maximumQuantity: input.maximumQuantity,
           circulation: input.circulation,
           status: input.status,
-          conditionalFields: input.conditionalFields,
+          conditionalFields: input.conditionalFields ? JSON.stringify(input.conditionalFields) : undefined,
           createdBy: { connect: { id: ctx.session.user.id } },
           category: { connect: { id: input.categoryId } },
         },
@@ -42,15 +32,16 @@ export const itemRouter = createTRPCRouter({
   getAll: publicProcedure
     .input(
       z.object({
-        limit: z.number().min(1).max(100).default(50),
+        limit: z.number().min(1).max(100).default(10),
+        page: z.number().min(1).default(1),
         cursor: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const items = await ctx.db.item.findMany({
-        take: input.limit + 1,
-        cursor: input.cursor ? { id: input.cursor } : undefined,
-        orderBy: { createdAt: "desc" },
+      const result = await executePaginatedQuery({
+        db: ctx.db,
+        model: "item",
+        input,
         include: {
           category: {
             select: {
@@ -59,17 +50,13 @@ export const itemRouter = createTRPCRouter({
             },
           },
         },
+        orderBy: { createdAt: "desc" },
       });
 
-      let nextCursor: typeof input.cursor | undefined = undefined;
-      if (items.length > input.limit) {
-        const nextItem = items.pop();
-        nextCursor = nextItem!.id;
-      }
-
       return {
-        items,
-        nextCursor,
+        items: result.items,
+        nextCursor: result.nextCursor,
+        pagination: result.pagination,
       };
     }),
 
@@ -79,6 +66,15 @@ export const itemRouter = createTRPCRouter({
       const item = await ctx.db.item.findFirst({
         where: {
           id: input.id,
+          deletedAt: null,
+        },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       });
 
@@ -90,19 +86,7 @@ export const itemRouter = createTRPCRouter({
     }),
 
   update: adminProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1, "Name is required").optional(),
-        description: z.string().optional(),
-        price: z.number().min(0).optional(),
-        minimumQuantity: z.number().int().min(0).optional(),
-        maximumQuantity: z.number().int().min(0).optional(),
-        circulation: z.number().int().min(0).optional(),
-        status: z.number().int().min(0).optional(),
-        conditionalFields: z.any().optional(),
-      }),
-    )
+    .input(updateItemSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
@@ -110,6 +94,7 @@ export const itemRouter = createTRPCRouter({
         where: {
           id,
           createdBy: { id: ctx.session.user.id },
+          deletedAt: null,
         },
       });
 
@@ -119,7 +104,10 @@ export const itemRouter = createTRPCRouter({
 
       return ctx.db.item.update({
         where: { id },
-        data: updateData,
+        data: {
+          ...updateData,
+          conditionalFields: updateData.conditionalFields ? JSON.stringify(updateData.conditionalFields) : undefined,
+        },
       });
     }),
 
@@ -130,6 +118,7 @@ export const itemRouter = createTRPCRouter({
         where: {
           id: input.id,
           createdBy: { id: ctx.session.user.id },
+          deletedAt: null,
         },
       });
 
@@ -137,15 +126,20 @@ export const itemRouter = createTRPCRouter({
         throw new Error("Item not found");
       }
 
-      return ctx.db.item.delete({
+      // Soft delete: set deletedAt timestamp
+      return ctx.db.item.update({
         where: { id: input.id },
+        data: { deletedAt: new Date() },
       });
     }),
 
   getLatest: protectedProcedure.query(async ({ ctx }) => {
     const item = await ctx.db.item.findFirst({
       orderBy: { createdAt: "desc" },
-      where: { createdBy: { id: ctx.session.user.id } },
+      where: {
+        createdBy: { id: ctx.session.user.id },
+        deletedAt: null,
+      },
     });
 
     return item ?? null;
@@ -162,6 +156,7 @@ export const itemRouter = createTRPCRouter({
       return ctx.db.item.findMany({
         where: {
           createdBy: { id: ctx.session.user.id },
+          deletedAt: null,
           name: {
             contains: input.query,
             search: "insensitive",

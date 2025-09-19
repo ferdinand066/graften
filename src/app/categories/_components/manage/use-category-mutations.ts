@@ -12,7 +12,7 @@ export type CategoryWithItems = Category & {
   };
 };
 
-export function useCategoryMutations() {
+export function useCategoryMutations(onUpdateSuccess?: () => void) {
   const [editingCategory, setEditingCategory] = useState<CategoryWithItems | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -29,6 +29,7 @@ export function useCategoryMutations() {
     onSuccess: async () => {
       await utils.category.invalidate();
       setEditingCategory(null);
+      onUpdateSuccess?.();
     },
   });
 
@@ -45,7 +46,7 @@ export function useCategoryMutations() {
       const updatePromise = updateCategory.mutateAsync({
         id: editingCategory.id,
         name: data.name,
-        description: data.description || undefined,
+        description: data.description,
       });
 
       toast.promise(updatePromise, {
@@ -56,7 +57,7 @@ export function useCategoryMutations() {
     } else {
       const createPromise = createCategory.mutateAsync({
         name: data.name,
-        description: data.description || undefined,
+        description: data.description,
       });
 
       toast.promise(createPromise, {

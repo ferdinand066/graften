@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import type { ConditionalFieldModel } from "schema/item.schema";
+import { formatCurrency } from "@/lib/utils";
 
 interface ConditionalFieldInputProps {
   field: {
@@ -309,7 +310,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
 
               {isValueField(fieldData) && fieldData.value !== undefined && (
                 <Badge variant="secondary" className="text-xs">
-                  {fieldData.value}
+                  {formatCurrency(fieldData.value)}
                 </Badge>
               )}
             </div>

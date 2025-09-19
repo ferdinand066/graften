@@ -5,14 +5,13 @@ import {
   createTRPCRouter,
   publicProcedure,
 } from "@/server/api/trpc";
+import { createCategorySchema, deleteCategorySchema, updateCategorySchema } from "schema/category.schema";
+import { executePaginatedQuery } from "@/server/utils/pagination";
 
 export const categoryRouter = createTRPCRouter({
   create: adminProcedure
     .input(
-      z.object({
-        name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
-        description: z.string().optional(),
-      }),
+      createCategorySchema
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.category.create({
@@ -27,15 +26,16 @@ export const categoryRouter = createTRPCRouter({
   getAll: publicProcedure
     .input(
       z.object({
-        limit: z.number().min(1).max(100).default(50),
+        limit: z.number().min(1).max(100).default(10),
+        page: z.number().min(1).default(1),
         cursor: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const categories = await ctx.db.category.findMany({
-        take: input.limit + 1,
-        cursor: input.cursor ? { id: input.cursor } : undefined,
-        orderBy: { createdAt: "desc" },
+      const result = await executePaginatedQuery({
+        db: ctx.db,
+        model: "category",
+        input,
         include: {
           _count: {
             select: {
@@ -43,17 +43,13 @@ export const categoryRouter = createTRPCRouter({
             },
           },
         },
+        orderBy: { createdAt: "desc" },
       });
 
-      let nextCursor: typeof input.cursor | undefined = undefined;
-      if (categories.length > input.limit) {
-        const nextCategory = categories.pop();
-        nextCursor = nextCategory!.id;
-      }
-
       return {
-        categories,
-        nextCursor,
+        categories: result.items,
+        nextCursor: result.nextCursor,
+        pagination: result.pagination,
       };
     }),
 
@@ -63,11 +59,16 @@ export const categoryRouter = createTRPCRouter({
       const category = await ctx.db.category.findFirst({
         where: {
           id: input.id,
+          deletedAt: null,
         },
         include: {
           _count: {
             select: {
-              items: true,
+              items: {
+                where: {
+                  deletedAt: null,
+                },
+              },
             },
           },
         },
@@ -82,11 +83,7 @@ export const categoryRouter = createTRPCRouter({
 
   update: adminProcedure
     .input(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters").optional(),
-        description: z.string().optional(),
-      }),
+      updateCategorySchema,
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
@@ -95,6 +92,7 @@ export const categoryRouter = createTRPCRouter({
         where: {
           id,
           createdById: ctx.session.user.id,
+          deletedAt: null,
         },
       });
 
@@ -109,17 +107,22 @@ export const categoryRouter = createTRPCRouter({
     }),
 
   delete: adminProcedure
-    .input(z.object({ id: z.string() }))
+    .input(deleteCategorySchema)
     .mutation(async ({ ctx, input }) => {
       const existingCategory = await ctx.db.category.findFirst({
         where: {
           id: input.id,
           createdById: ctx.session.user.id,
+          deletedAt: null,
         },
         include: {
           _count: {
             select: {
-              items: true,
+              items: {
+                where: {
+                  deletedAt: null,
+                },
+              },
             },
           },
         },
@@ -129,13 +132,29 @@ export const categoryRouter = createTRPCRouter({
         throw new Error("Category not found or you don't have permission to delete it");
       }
 
-      // Check if category has items
+      // Check if category has active items
       if (existingCategory._count.items > 0) {
-        throw new Error("Cannot delete category that has items. Please move or delete items first.");
+        throw new Error("Cannot delete category that has active items. Please move or delete items first.");
       }
 
-      return ctx.db.category.delete({
+      // Soft delete: set deletedAt timestamp
+      return ctx.db.category.update({
         where: { id: input.id },
+        data: { deletedAt: new Date() },
+      });
+    }),
+
+  getAllForDropdown: publicProcedure
+    .query(async ({ ctx }) => {
+      return ctx.db.category.findMany({
+        where: {
+          deletedAt: null,
+        },
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+        },
       });
     }),
 
@@ -149,6 +168,7 @@ export const categoryRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.db.category.findMany({
         where: {
+          deletedAt: null,
           name: {
             contains: input.query,
           },
@@ -158,7 +178,11 @@ export const categoryRouter = createTRPCRouter({
         include: {
           _count: {
             select: {
-              items: true,
+              items: {
+                where: {
+                  deletedAt: null,
+                },
+              },
             },
           },
         },

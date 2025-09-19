@@ -22,6 +22,7 @@ model Item {
 
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
+    deletedAt   DateTime?
 
     createdBy   User   @relation(fields: [createdById], references: [id])
     createdById String
@@ -32,6 +33,7 @@ model Item {
     status Int @default(1)
 
     @@index([name])
+    @@index([deletedAt])
 }
 
 model Category {
@@ -40,6 +42,7 @@ model Category {
     description String?
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
+    deletedAt   DateTime?
 
     createdBy   User   @relation(fields: [createdById], references: [id])
     createdById String
@@ -47,6 +50,7 @@ model Category {
     items Item[]
 
     @@index([name])
+    @@index([deletedAt])
 }
 
 model Account {

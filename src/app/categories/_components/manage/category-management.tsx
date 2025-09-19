@@ -5,19 +5,23 @@ import { PageHeader, PageHeaderAction, PageHeaderContent, PageHeaderDescription,
 import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
 import { useState } from "react";
+import type { CreateCategoryInput } from "schema/category.schema";
+import type { CategoryModel } from "types/category";
 import { CategoryCard } from "../category-card";
 import { CategoryEmptyState } from "../category-empty-state";
 import { CategoryForm } from "../category-form";
 import { DeleteConfirmationDialog } from "../delete-confirmation-dialog";
-import { useCategoryMutations, type CategoryWithItems } from "./use-category-mutations";
-import type { CategoryModel } from "types/category";
-import type { CreateCategoryInput } from "schema/category.schema";
+import { useCategoryMutations } from "./use-category-mutations";
+import { DataPagination } from "@/app/_components/pages/data-pagination";
 
 export function CategoryManagement() {
   const [isCreating, setIsCreating] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const { data: categoriesData, isLoading } = api.category.getAll.useQuery({
-    limit: 50,
+    limit: itemsPerPage,
+    page: currentPage,
   });
 
   const {
@@ -32,9 +36,10 @@ export function CategoryManagement() {
     deleteDialogOpen,
     categoryToDelete,
     isSubmitting,
-  } = useCategoryMutations();
+  } = useCategoryMutations(() => setIsCreating(false));
 
   const categories = categoriesData?.categories || [];
+  const pagination = categoriesData?.pagination;
 
   const handleFormCancel = () => {
     handleCancel();
@@ -51,6 +56,10 @@ export function CategoryManagement() {
     if (!editingCategory) {
       setIsCreating(false);
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -83,23 +92,33 @@ export function CategoryManagement() {
           isSubmitting={isSubmitting}
         />
       ) : (
-        <CardTable
-          data={categories}
-          loading={isLoading}
-          emptyState={
-            <CategoryEmptyState setIsCreating={setIsCreating} />
-          }
-          renderItem={(category) => (
-            <CategoryCard
-              key={category.id}
-              category={category}
-              isCreating={isCreating}
-              handleEdit={handleEditCategory}
-              handleDelete={handleDelete}
-              isDeleting={deleteCategory.isPending && categoryToDelete?.id === category.id}
+        <>
+          <CardTable
+            data={categories}
+            loading={isLoading}
+            emptyState={
+              <CategoryEmptyState setIsCreating={setIsCreating} />
+            }
+            renderItem={(category) => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+                isCreating={isCreating}
+                handleEdit={handleEditCategory}
+                handleDelete={handleDelete}
+                isDeleting={deleteCategory.isPending && categoryToDelete?.id === category.id}
+              />
+            )}
+          />
+
+
+          {pagination && (
+            <DataPagination
+              pagination={pagination}
+              onPageChange={handlePageChange}
             />
           )}
-        />
+        </>
       )}
 
       <DeleteConfirmationDialog

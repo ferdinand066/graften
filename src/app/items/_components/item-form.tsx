@@ -35,9 +35,7 @@ interface ItemFormProps {
 }
 
 export function ItemForm({ editingItem, onSubmit, onCancel, isSubmitting }: ItemFormProps) {
-  const { data: categoriesData } = api.category.getAll.useQuery({
-    limit: 100,
-  });
+  const { data: categoriesData } = api.category.getAllForDropdown.useQuery();
 
   const form = useForm<CreateItemInput>({
     resolver: zodResolver(createItemSchema),
@@ -103,7 +101,7 @@ export function ItemForm({ editingItem, onSubmit, onCancel, isSubmitting }: Item
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {categoriesData?.categories.map((category) => (
+                            {categoriesData?.map((category) => (
                               <SelectItem key={category.id} value={category.id}>
                                 {category.name}
                               </SelectItem>

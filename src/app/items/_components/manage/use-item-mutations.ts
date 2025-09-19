@@ -1,10 +1,9 @@
 "use client";
 
 import { api } from "@/trpc/react";
-import type { Item } from "@prisma/client";
 import { useState } from "react";
+import type { CreateItemInput } from "schema/item.schema";
 import { toast } from "sonner";
-import { type CreateItemInput } from "schema/item.schema";
 import type { ItemModel } from "types/item";
 
 export function useItemMutations(onUpdateSuccess?: () => void) {
@@ -41,13 +40,14 @@ export function useItemMutations(onUpdateSuccess?: () => void) {
       const updatePromise = updateItem.mutateAsync({
         id: editingItem.id,
         name: data.name,
-        description: data.description || undefined,
+        description: data.description || "",
         price: data.price,
         minimumQuantity: data.minimumQuantity,
         maximumQuantity: data.maximumQuantity,
         circulation: data.circulation,
         status: data.status,
         conditionalFields: data.conditionalFields,
+        categoryId: data.categoryId,
       });
 
       toast.promise(updatePromise, {
@@ -58,7 +58,7 @@ export function useItemMutations(onUpdateSuccess?: () => void) {
     } else {
       const createPromise = createItem.mutateAsync({
         name: data.name,
-        description: data.description || undefined,
+        description: data.description || "",
         price: data.price,
         minimumQuantity: data.minimumQuantity,
         maximumQuantity: data.maximumQuantity,
