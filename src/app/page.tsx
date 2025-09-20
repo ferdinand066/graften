@@ -21,8 +21,8 @@ export default async function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             {session?.user ? (
               <Button asChild size="lg" className="text-lg px-8 py-4">
-                <Link href="/dashboard">
-                  Go to Dashboard
+                <Link href="/items">
+                  Go to Items
                 </Link>
               </Button>
             ) : (

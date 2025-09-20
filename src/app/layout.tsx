@@ -4,8 +4,9 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "@/trpc/react";
-import { Navbar } from "@/components/navbar";
+import { Navbar } from "@/app/_components/navbar";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "Graften",
@@ -24,11 +25,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <body className="bg-gradient-to-br from-red-50 to-white min-h-screen">
-        <TRPCReactProvider>
-          <Navbar />
-          {children}
-        </TRPCReactProvider>
-        <Toaster position="top-right" />
+        <SessionProvider>
+          <TRPCReactProvider>
+            <Navbar />
+            {children}
+          </TRPCReactProvider>
+          <Toaster position="top-right" />
+        </SessionProvider>
       </body>
     </html>
   );

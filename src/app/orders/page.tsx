@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/server/auth";
+import { USER_ROLE } from "utils/constants";
 
 export default async function OrdersPage() {
   const session = await auth();
@@ -8,8 +9,8 @@ export default async function OrdersPage() {
     redirect("/login");
   }
 
-  if (session.user.role !== 2) {
-    redirect("/dashboard");
+  if (session.user.role !== USER_ROLE.ADMIN) {
+    redirect("/");
   }
 
   return (

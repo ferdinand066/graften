@@ -11,13 +11,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { loginSchema, type LoginSchema } from "schema/auth/login.schema";
 import { registerSchema, type RegisterSchema } from "schema/auth/register.schema";
+import { toast } from "sonner";
+import { USER_ROLE } from "utils/constants";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -61,7 +62,7 @@ function RegisterForm() {
       const signInResult = await signIn("credentials", {
         email: data.email,
         password: data.password,
-        redirectTo: "/dashboard",
+        redirect: false,
       });
 
       if (signInResult?.error) {
@@ -168,6 +169,7 @@ function RegisterForm() {
 
 function LoginForm() {
   const router = useRouter();
+  const { update } = useSession();
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
@@ -183,7 +185,7 @@ function LoginForm() {
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
-        redirectTo: "/dashboard",
+        redirect: false,
       });
 
       if (result?.error) {
@@ -194,10 +196,16 @@ function LoginForm() {
         throw new Error("Invalid email or password");
       }
 
+      const updatedSession = await update();
+      const redirectTo = updatedSession?.user?.role === USER_ROLE.ADMIN ? "/orders" : "/items";
+
+      router.refresh();
+      setTimeout(() => router.push(redirectTo), 100);
+
       return "Welcome back! Signed in successfully!";
     };
 
-    toast.promise(loginProcess(), {
+    toast.promise(loginProcess, {
       loading: "Signing you in...",
       success: "Welcome back! Signed in successfully!",
       error: (err) => err.message || "Login failed",

@@ -1,6 +1,7 @@
 "use client";
 
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { cn } from "@/lib/utils";
 
 interface PaginationData {
   page: number;
@@ -103,7 +104,7 @@ export function DataPagination({ pagination, onPageChange, className }: DataPagi
   };
 
   return (
-    <div className={`flex flex-col-reverse gap-4 md:flex-row items-center justify-between ${className || ''}`}>
+    <div className={cn("flex flex-col-reverse gap-4 md:flex-row items-center justify-between", className)}>
       <p className="text-sm text-muted-foreground text-nowrap">
         Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.totalCount)} of {pagination.totalCount} items
       </p>

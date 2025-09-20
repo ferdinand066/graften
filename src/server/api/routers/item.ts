@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { kebabCase } from "lodash";
 
 import {
   adminProcedure,
@@ -13,9 +14,12 @@ export const itemRouter = createTRPCRouter({
   create: adminProcedure
     .input(createItemSchema)
     .mutation(async ({ ctx, input }) => {
+      const slug = `${kebabCase(input.name)}-${Date.now().toString(36)}`;
+
       return ctx.db.item.create({
         data: {
           name: input.name,
+          slug,
           description: input.description,
           price: input.price,
           minimumQuantity: input.minimumQuantity,
@@ -66,6 +70,31 @@ export const itemRouter = createTRPCRouter({
       const item = await ctx.db.item.findFirst({
         where: {
           id: input.id,
+          deletedAt: null,
+        },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      if (!item) {
+        throw new Error("Item not found");
+      }
+
+      return item;
+    }),
+
+  getBySlug: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const item = await ctx.db.item.findFirst({
+        where: {
+          slug: input.slug,
           deletedAt: null,
         },
         include: {
@@ -164,6 +193,28 @@ export const itemRouter = createTRPCRouter({
         },
         orderBy: { createdAt: "desc" },
         take: input.limit,
+      });
+    }),
+
+  getAllForPreview: publicProcedure
+    .query(async ({ ctx }) => {
+      return ctx.db.item.findMany({
+        where: {
+          deletedAt: null,
+          status: 1, // Only active items
+          category: {
+            deletedAt: null, // Only items with non-deleted categories
+          },
+        },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
       });
     }),
 });

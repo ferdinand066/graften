@@ -35,7 +35,9 @@ interface ItemFormProps {
 }
 
 export function ItemForm({ editingItem, onSubmit, onCancel, isSubmitting }: ItemFormProps) {
-  const { data: categoriesData } = api.category.getAllForDropdown.useQuery();
+  const { data: categoriesData } = api.category.getAllForDropdown.useQuery({
+    showTotalItem: false,
+  });
 
   const form = useForm<CreateItemInput>({
     resolver: zodResolver(createItemSchema),

@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -8,36 +6,20 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { signOut, useSession } from "next-auth/react";
+import { auth, signOut } from "@/server/auth";
 import { ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { USER_ROLE } from "utils/constants";
 
+
 const navItemClass = navigationMenuTriggerStyle();
 
-export function ClientNavbar() {
-  const { data: session, status } = useSession();
+export async function Navbar() {
+  const session = await auth();
   const userRole = session?.user?.role;
 
-  if (status === "loading") {
-    return (
-      <nav className="w-full p-6 bg-background shadow-sm border-b">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex flex-row gap-4">
-            <Link href="/" className="text-2xl font-bold text-foreground hover:text-primary transition">
-              Graften <span className="text-primary">Digital</span>
-            </Link>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="animate-pulse bg-muted h-8 w-20 rounded"></div>
-          </div>
-        </div>
-      </nav>
-    );
-  }
-
   return (
-    <nav className="w-full p-6 bg-background shadow-sm border-b">
+    <nav className="w-full p-6 bg-background shadow-sm border-b border-border">
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex flex-row gap-4">
           <Link href="/" className="text-2xl font-bold text-foreground hover:text-primary transition">
@@ -45,7 +27,7 @@ export function ClientNavbar() {
           </Link>
           <NavigationMenu>
             <NavigationMenuList>
-              {!session?.user && (
+              {!session?.user || userRole === USER_ROLE.USER && (
                 <>
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild className={navItemClass}>
@@ -60,19 +42,16 @@ export function ClientNavbar() {
                 </>
               )}
 
-              {session?.user && userRole === USER_ROLE.USER && (
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild className={navItemClass}>
-                    <Link href="/items" className={navItemClass}>Items</Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              )}
-
               {session?.user && userRole === USER_ROLE.ADMIN && (
                 <>
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild className={navItemClass}>
                       <Link href="/orders" className={navItemClass}>Orders</Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild className={navItemClass}>
+                      <Link href="/categories" className={navItemClass}>Category</Link>
                     </NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem>
@@ -85,6 +64,7 @@ export function ClientNavbar() {
             </NavigationMenuList>
           </NavigationMenu>
         </div>
+
 
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-4">
@@ -113,13 +93,16 @@ export function ClientNavbar() {
                   Welcome, {session.user.name || session.user.email}
                 </span>
 
-                <Button
-                  onClick={() => signOut({ callbackUrl: "/" })}
-                  variant="destructive"
-                  size="sm"
+                <form
+                  action={async () => {
+                    "use server";
+                    await signOut({ redirectTo: "/" });
+                  }}
                 >
-                  Sign Out
-                </Button>
+                  <Button type="submit" variant="destructive" size="sm">
+                    Sign Out
+                  </Button>
+                </form>
               </>
             )}
           </div>

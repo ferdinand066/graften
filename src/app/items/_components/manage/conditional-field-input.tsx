@@ -1,15 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import InputNumber from "@/components/ui/custom/input-number";
 import {
   Accordion,
   AccordionContent,
@@ -17,21 +7,28 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import InputNumber from "@/components/ui/custom/input-number";
 import {
-  Plus,
-  Trash2,
-  Hash,
-  Folder,
-  ChevronRight,
-  ChevronDown,
-  GripVertical,
-  ArrowRight,
-  Copy,
-  RotateCcw
-} from "lucide-react";
-import { useState, useMemo } from "react";
-import type { ConditionalFieldModel } from "schema/item.schema";
+  FormControl,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
+import {
+  ArrowRight,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Folder,
+  Hash,
+  Plus,
+  RotateCcw,
+  Trash2
+} from "lucide-react";
+import { useState } from "react";
+import type { ConditionalFieldModel } from "schema/item.schema";
 
 interface ConditionalFieldInputProps {
   field: {

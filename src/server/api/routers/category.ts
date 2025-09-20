@@ -64,11 +64,12 @@ export const categoryRouter = createTRPCRouter({
         include: {
           _count: {
             select: {
-              items: {
-                where: {
-                  deletedAt: null,
+                items: {
+                  where: {
+                    deletedAt: null,
+                    status: 1, // Only count active items
+                  },
                 },
-              },
             },
           },
         },
@@ -118,11 +119,12 @@ export const categoryRouter = createTRPCRouter({
         include: {
           _count: {
             select: {
-              items: {
-                where: {
-                  deletedAt: null,
+                items: {
+                  where: {
+                    deletedAt: null,
+                    status: 1, // Only count active items
+                  },
                 },
-              },
             },
           },
         },
@@ -145,7 +147,12 @@ export const categoryRouter = createTRPCRouter({
     }),
 
   getAllForDropdown: publicProcedure
-    .query(async ({ ctx }) => {
+    .input(
+      z.object({
+        showTotalItem: z.boolean().optional().default(false),
+      })
+    )
+    .query(async ({ ctx, input }) => {
       return ctx.db.category.findMany({
         where: {
           deletedAt: null,
@@ -154,6 +161,18 @@ export const categoryRouter = createTRPCRouter({
         select: {
           id: true,
           name: true,
+          ...(input.showTotalItem && {
+            _count: {
+              select: {
+                items: {
+                  where: {
+                    deletedAt: null,
+                    status: 1, // Only count active items
+                  },
+                },
+              },
+            },
+          }),
         },
       });
     }),
@@ -178,11 +197,12 @@ export const categoryRouter = createTRPCRouter({
         include: {
           _count: {
             select: {
-              items: {
-                where: {
-                  deletedAt: null,
+                items: {
+                  where: {
+                    deletedAt: null,
+                    status: 1, // Only count active items
+                  },
                 },
-              },
             },
           },
         },
