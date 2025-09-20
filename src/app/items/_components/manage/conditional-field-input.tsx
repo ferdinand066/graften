@@ -1,11 +1,5 @@
 "use client";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import InputNumber from "@/components/ui/custom/input-number";
@@ -46,7 +40,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
 
   // Generate default names
   const generateDefaultName = (parentPath?: string, index?: number) => {
-    const currentValue = field.value || [];
+    const currentValue = field.value ?? [];
     const totalFields = currentValue.length;
 
     if (parentPath) {
@@ -58,18 +52,18 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
   // Get breadcrumb path
   const getBreadcrumbs = (path: string) => {
     const pathParts = path.split('.');
-    const currentValue = field.value || [];
+    const currentValue = field.value ?? [];
     const breadcrumbs: string[] = [];
 
     let current = currentValue;
-    for (let i = 0; i < pathParts.length; i++) {
-      const index = parseInt(pathParts[i]!);
+    pathParts.forEach((part) => {
+      const index = parseInt(part);
       const fieldData = current[index];
       if (fieldData) {
-        breadcrumbs.push(fieldData.text || `Field ${index + 1}`);
-        current = fieldData.children || [];
+        breadcrumbs.push(fieldData.text ?? `Field ${index + 1}`);
+        current = fieldData.children ?? [];
       }
-    }
+    });
 
     return breadcrumbs;
   };
@@ -90,7 +84,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
     const names = batchAddText.split(',').map(name => name.trim()).filter(name => name);
     if (names.length === 0) return;
 
-    const currentValue = field.value || [];
+    const currentValue = field.value ?? [];
     const newValue = [...currentValue];
     let current = newValue;
 
@@ -138,7 +132,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
   // Toggle field type
   const toggleFieldType = (path: string) => {
     const pathParts = path.split('.');
-    const currentValue = field.value || [];
+    const currentValue = field.value ?? [];
     const newValue = [...currentValue];
 
     let current = newValue;
@@ -171,7 +165,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
       children: undefined,
     };
 
-    const currentValue = field.value || [];
+    const currentValue = field.value ?? [];
 
     if (parentPath) {
       // Add as child to existing field
@@ -189,7 +183,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
           if (!current[index]?.children) {
             current[index]!.children = [];
           }
-          current[index]!.children!.push(newField);
+          current[index]!.children.push(newField);
         } else {
           current = current[index]!.children!;
         }
@@ -204,7 +198,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
 
   const removeField = (path: string) => {
     const pathParts = path.split('.');
-    const currentValue = field.value || [];
+    const currentValue = field.value ?? [];
     const newValue = [...currentValue];
 
     if (pathParts.length === 1) {
@@ -231,7 +225,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
 
   const updateField = (path: string, updates: Partial<ConditionalFieldModel>) => {
     const pathParts = path.split('.');
-    const currentValue = field.value || [];
+    const currentValue = field.value ?? [];
     const newValue = [...currentValue];
 
     if (pathParts.length === 1) {
@@ -330,7 +324,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
           <div className="text-sm font-medium mb-3">Field Structure</div>
           {!field.value || field.value.length === 0 ? (
             <div className="text-sm text-muted-foreground py-4">
-              No fields yet. Click "Add Field" to start.
+              {`No fields yet. Click "Add Field" to start.`}
             </div>
           ) : (
             field.value.map((fieldData, index) =>
@@ -347,7 +341,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
     if (!selectedPath) return null;
 
     const pathParts = selectedPath.split('.');
-    const currentValue = field.value || [];
+    const currentValue = field.value ?? [];
 
     let current = currentValue;
     for (let i = 0; i < pathParts.length; i++) {
@@ -357,147 +351,13 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
       if (i === pathParts.length - 1) {
         return current[index];
       } else {
-        current = current[index]?.children || [];
+        current = current[index]?.children ?? [];
       }
     }
     return null;
   };
 
   const selectedFieldData = getSelectedFieldData();
-
-  const renderField = (fieldData: ConditionalFieldModel, path: string, depth = 0) => {
-    const hasChildren = fieldData.children && fieldData.children.length > 0;
-
-    return (
-      <AccordionItem key={path} value={`field-${path}`} className="border rounded-lg px-4 mb-2 last:border-b-1">
-        <AccordionTrigger className="hover:no-underline">
-          <div className="flex items-center justify-between w-full">
-            <div className="text-left">
-              <div className="font-medium">
-                {fieldData.text || "Untitled Field"}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {fieldData.value !== undefined
-                  ? `Value Field: ${fieldData.value}`
-                  : hasChildren
-                    ? `Container Field: ${fieldData.children!.length} child${fieldData.children!.length === 1 ? '' : 'ren'}`
-                    : "Empty Field"
-                }
-              </div>
-            </div>
-          </div>
-        </AccordionTrigger>
-
-        <AccordionContent className="pt-4">
-          <div className="space-y-4 mb-4">
-            {/* Field Text - Always available */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <FormLabel className="font-normal">Field Text *</FormLabel>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeField(path)}
-                  className="flex items-center gap-1 text-red-600 hover:text-red-700 h-8"
-                >
-                  <Trash2 className="h-3 w-3" />
-                  Remove
-                </Button>
-              </div>
-              <FormControl>
-                <Input
-                  placeholder="Enter field text"
-                  value={fieldData.text}
-                  onChange={(e) => updateField(path, { text: e.target.value })}
-                />
-              </FormControl>
-            </div>
-
-            {/* Field Type Selection */}
-            <div className="space-y-2">
-              <FormLabel className="font-normal">Field Type</FormLabel>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={fieldData.value !== undefined ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    // Clear children if switching to value type
-                    updateField(path, { value: 0, children: undefined });
-                  }}
-                  className="flex items-center gap-1"
-                >
-                  <Hash className="h-3 w-3" />
-                  Value Field
-                </Button>
-                <Button
-                  type="button"
-                  variant={fieldData.value === undefined ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    // Clear value if switching to children type
-                    updateField(path, { value: undefined, children: [] });
-                  }}
-                  className="flex items-center gap-1"
-                >
-                  <Folder className="h-3 w-3" />
-                  Container Field
-                </Button>
-              </div>
-            </div>
-
-            {/* Conditional rendering based on field type */}
-            {fieldData.value !== undefined ? (
-              <div className="space-y-2">
-                <FormLabel className="font-normal">Value</FormLabel>
-                <FormControl>
-                  <InputNumber
-                    value={fieldData.value}
-                    onChange={(value) => updateField(path, { value })}
-                    placeholder="Enter value"
-                    allowDecimals={true}
-                  />
-                </FormControl>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <FormLabel className="font-normal">Child Fields</FormLabel>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addField(path)}
-                    className="flex items-center gap-1"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Add Child
-                  </Button>
-                </div>
-                {!hasChildren && (
-                  <div className="text-sm text-muted-foreground py-2">
-                    No child fields yet. Click "Add Child" to create nested fields.
-                  </div>
-                )}
-              </div>
-            )}
-
-          </div>
-
-          {hasChildren && (
-            <div className="pt-4 border-t">
-              <Accordion type="single" collapsible className="w-full">
-                {fieldData.children!.map((child, index) =>
-                  renderField(child, `${path}.${index}`, depth + 1)
-                )}
-              </Accordion>
-            </div>
-          )}
-        </AccordionContent>
-      </AccordionItem>
-    );
-  };
 
   return (
     <div className="space-y-4">
@@ -518,7 +378,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
       {!field.value || field.value.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           <p>No conditional fields added yet.</p>
-          <p className="text-sm">Click "Add Field" to create your first conditional field.</p>
+          <p className="text-sm">{`Click "Add Field" to create your first conditional field.`}</p>
         </div>
       ) : (
         <div className="flex h-96 border rounded-lg overflow-hidden">
@@ -683,7 +543,7 @@ export function ConditionalFieldInput({ field, label = "Conditional Fields" }: C
 
                       {!selectedFieldData.children || selectedFieldData.children.length === 0 ? (
                         <div className="text-sm text-muted-foreground py-4 border rounded-lg text-center">
-                          No child fields yet. Click "Add Child" or use "Batch Add" to create nested fields.
+                          {`No child fields yet. Click "Add Child" or use "Batch Add" to create nested fields.`}
                         </div>
                       ) : (
                         <div className="space-y-2">

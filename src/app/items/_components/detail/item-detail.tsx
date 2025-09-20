@@ -4,18 +4,39 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import InputNumber from "@/components/ui/custom/input-number";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useCart } from "@/lib/hooks/use-cart";
 import { formatCurrency } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import {
   AlertCircle,
   Info,
+  LogIn,
   Minus,
   Plus,
-  ShoppingCart
+  ShoppingCart,
+  UserPlus
 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { ConditionalFieldModel, ItemModel } from "types/item";
+
+interface SelectedOption {
+  fieldIndex: number;
+  path: number[];
+  selectedItem: ConditionalFieldModel;
+  fullPath: ConditionalFieldModel[];
+}
 
 interface ItemDetailProps {
   slug: string;
@@ -23,15 +44,41 @@ interface ItemDetailProps {
 
 export function ItemDetail({ slug }: ItemDetailProps) {
   const [quantity, setQuantity] = useState<number>(1);
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, any>>({});
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, SelectedOption>>({});
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: item, isLoading, error } = api.item.getBySlug.useQuery<ItemModel>({ slug });
+  const { addToCart } = useCart();
+  const { data: session } = useSession();
+
+  // Convert UI selection format to database format
+  const convertToConditionalFieldModel = useCallback((selectedOptions: Record<string, SelectedOption> | null): ConditionalFieldModel[] | null => {
+    if (!selectedOptions || Object.keys(selectedOptions).length === 0) return null;
+
+    const result: ConditionalFieldModel[] = [];
+
+    Object.values(selectedOptions).forEach((selection: SelectedOption) => {
+      if (selection.selectedItem) {
+        result.push(selection.selectedItem);
+      }
+    });
+
+    return result.length > 0 ? result : null;
+  }, []);
+
+  // Helper function to get current URL for redirect
+  const getCurrentUrl = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname + window.location.search;
+    }
+    return '';
+  }, []);
 
   // Initialize quantity when item data loads
   useEffect(() => {
     if (item) {
-      const typedItem = item as ItemModel;
+      const typedItem = item;
       const minQuantity = typedItem.minimumQuantity || 1;
       setQuantity(minQuantity);
     }
@@ -46,10 +93,10 @@ export function ItemDetail({ slug }: ItemDetailProps) {
     };
   }, []);
 
-  const typedItem = item as ItemModel;
+  const typedItem = item;
   const maxQuantity = typedItem?.maximumQuantity;
-  const minQuantity = typedItem?.minimumQuantity || 1;
-  const circulation = typedItem?.circulation;
+  const minQuantity = typedItem?.minimumQuantity ?? 1;
+  const circulation = typedItem?.circulation ?? 1;
 
   // Helper function to find the closest valid quantity based on circulation rules
   const findClosestValidQuantity = useCallback((targetQuantity: number): number => {
@@ -59,7 +106,7 @@ export function ItemDetail({ slug }: ItemDetailProps) {
 
     // If circulation is 1, any quantity within min/max is valid
     if (circulation <= 1) {
-      return Math.max(minQuantity, Math.min(targetQuantity, maxQuantity || targetQuantity));
+      return Math.max(minQuantity, Math.min(targetQuantity, maxQuantity ?? targetQuantity));
     }
 
     // Find the closest valid quantity that follows circulation rules
@@ -72,9 +119,9 @@ export function ItemDetail({ slug }: ItemDetailProps) {
     const distanceToNext = Math.abs(targetQuantity - nextQuantity);
 
     if (distanceToBase <= distanceToNext) {
-      return Math.max(minQuantity, Math.min(baseQuantity, maxQuantity || baseQuantity));
+      return Math.max(minQuantity, Math.min(baseQuantity, maxQuantity ?? baseQuantity));
     } else {
-      const validNext = Math.max(minQuantity, Math.min(nextQuantity, maxQuantity || nextQuantity));
+      const validNext = Math.max(minQuantity, Math.min(nextQuantity, maxQuantity ?? nextQuantity));
       return maxQuantity && validNext > maxQuantity ? baseQuantity : validNext;
     }
   }, [minQuantity, maxQuantity, circulation]);
@@ -131,30 +178,87 @@ export function ItemDetail({ slug }: ItemDetailProps) {
     }
   };
 
-  const handleAddToCart = () => {
-    // Here you would typically call an API to add to cart
-    // For now, we'll just show a toast
-    const selectedOptionsText = Object.values(selectedOptions)
-      .map(selection => {
-        if (selection && typeof selection === 'object' && 'fullPath' in selection) {
-          const fullPath = selection.fullPath;
-          if (fullPath && fullPath.length > 0) {
-            return fullPath.map((item: ConditionalFieldModel) => item.text).join(' → ');
-          }
+  const handleAddToCart = async () => {
+    // Check authentication first
+    if (!session?.user) {
+      setShowAuthDialog(true);
+      return;
+    }
+
+    // Validation 1: Check if quantity is not empty or invalid
+    if (!quantity || quantity <= 0) {
+      toast.error("Invalid quantity", {
+        description: "Please enter a valid quantity.",
+      });
+      return;
+    }
+
+    // Validation 2: Check if all conditional field categories are selected
+    const conditionalFields = typedItem?.conditionalFields;
+    if (conditionalFields && conditionalFields.length > 0) {
+      const missingSelections: string[] = [];
+
+      conditionalFields.forEach((field, fieldIndex) => {
+        if (!field) return; // Skip null/undefined fields
+
+        const fieldKey = `field-${fieldIndex}`;
+        const selection = selectedOptions[fieldKey];
+
+        if (!selection?.selectedItem) {
+          missingSelections.push((field as ConditionalFieldModel).text);
         }
-        return null;
-      })
-      .filter(Boolean)
-      .join(', ');
+      });
 
-    const toastTitle = `Added ${quantity} × ${typedItem.name} to cart!`;
-    const toastDescription = selectedOptionsText
-      ? `Options: ${selectedOptionsText}\nTotal: ${formatCurrency(totalPrice)}`
-      : `Total: ${formatCurrency(totalPrice)}`;
+      if (missingSelections.length > 0) {
+        toast.error("Missing required selections", {
+          description: `Please select options for: ${missingSelections.join(', ')}`,
+          classNames: {
+            description: "!text-error",
+          }
+        });
+        return;
+      }
+    }
 
-    toast.success(toastTitle, {
-      description: toastDescription,
-    });
+    try {
+      // Add to cart using the cart hook
+      await addToCart({
+        itemId: typedItem?.id ?? "",
+        quantity: quantity,
+        selectedConditionalFields: convertToConditionalFieldModel(Object.keys(selectedOptions).length > 0 ? selectedOptions : null),
+      });
+
+      // Show success toast
+      const selectedOptionsText = Object.values(selectedOptions)
+        .map(selection => {
+          if (selection && typeof selection === 'object' && 'fullPath' in selection) {
+            const fullPath = selection.fullPath;
+            if (fullPath && fullPath.length > 0) {
+              return fullPath.map((item: ConditionalFieldModel) => item.text).join(' → ');
+            }
+          }
+          return null;
+        })
+        .filter(Boolean)
+        .join(', ');
+
+      const toastTitle = `Added ${quantity} × ${typedItem?.name} to cart!`;
+      const toastDescription = selectedOptionsText
+        ? `Options: ${selectedOptionsText}\nTotal: ${formatCurrency(totalPrice)}\nSaved to your account`
+        : `Total: ${formatCurrency(totalPrice)}\nSaved to your account`;
+
+      toast.success(toastTitle, {
+        description: toastDescription,
+        classNames: {
+          description: "!text-gray-600",
+        }
+      });
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+      toast.error("Failed to add to cart", {
+        description: "Please try again later.",
+      });
+    }
   };
 
   const renderConditionalFields = (fields: ConditionalFieldModel[] | null) => {
@@ -167,10 +271,12 @@ export function ItemDetail({ slug }: ItemDetailProps) {
 
         // Navigate to the selected item using the path
         let current = fields[fieldIndex];
+        if (!current) return newOptions; // Skip if field doesn't exist
+
         let selectedItem = current;
 
         for (const pathIndex of path) {
-          if (current?.children && current.children[pathIndex]) {
+          if (current?.children?.[pathIndex]) {
             current = current.children[pathIndex];
             selectedItem = current;
           }
@@ -181,9 +287,9 @@ export function ItemDetail({ slug }: ItemDetailProps) {
             fieldIndex: fieldIndex,
             path: path,
             selectedItem: selectedItem,
-            fullPath: [fields[fieldIndex], ...path.reduce((acc, pathIndex, i) => {
+            fullPath: [fields[fieldIndex]!, ...path.reduce((acc, pathIndex, i) => {
               const parent = i === 0 ? fields[fieldIndex] : acc[i - 1];
-              if (parent?.children && parent.children[pathIndex]) {
+              if (parent?.children?.[pathIndex]) {
                 acc.push(parent.children[pathIndex]);
               }
               return acc;
@@ -201,23 +307,22 @@ export function ItemDetail({ slug }: ItemDetailProps) {
 
       // Find current level to display based on selection
       let currentField = field;
-      let currentPath: number[] = [];
-      let breadcrumb: ConditionalFieldModel[] = [field];
+      const currentPath: number[] = [];
+      const breadcrumb: ConditionalFieldModel[] = [field];
 
       if (selection && selection.path.length > 0) {
         // If the selected item has children, navigate to it to show its children
         // Otherwise, stay at the current level
         const selectedItem = selection.selectedItem;
-        if (selectedItem && selectedItem.children && selectedItem.children.length > 0) {
+        if (selectedItem?.children && selectedItem?.children?.length > 0) {
           // Navigate to the selected item to show its children
-          for (let i = 0; i < selection.path.length; i++) {
-            const pathIndex = selection.path[i];
-            if (currentField.children && currentField.children[pathIndex]) {
+          selection.path.forEach((pathIndex) => {
+            if (currentField.children && pathIndex !== undefined && currentField.children[pathIndex]) {
               currentField = currentField.children[pathIndex];
               currentPath.push(pathIndex);
               breadcrumb.push(currentField);
             }
-          }
+          });
         }
       }
 
@@ -246,6 +351,7 @@ export function ItemDetail({ slug }: ItemDetailProps) {
                 <input
                   type="radio"
                   name={`field-${fieldIndex}`}
+                  value={JSON.stringify(currentPath)}
                   checked={selection && JSON.stringify(selection.path) === JSON.stringify(currentPath)}
                   onChange={() => handleFieldSelection(fieldIndex, currentPath)}
                   className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
@@ -260,10 +366,10 @@ export function ItemDetail({ slug }: ItemDetailProps) {
             )}
 
             {/* Show child options */}
-            {hasChildren && currentField.children!.map((child, childIndex) => {
+            {hasChildren && currentField.children?.map((child, childIndex) => {
               const childPath = [...currentPath, childIndex];
-              const isChildSelected = selection &&
-                JSON.stringify(selection.path) === JSON.stringify(childPath);
+              const isChildSelected = Boolean(selection &&
+                JSON.stringify(selection.path) === JSON.stringify(childPath));
               const childHasValue = child.value !== undefined;
               const childHasChildren = child.children && child.children.length > 0;
 
@@ -275,6 +381,7 @@ export function ItemDetail({ slug }: ItemDetailProps) {
                   <input
                     type="radio"
                     name={`field-${fieldIndex}`}
+                    value={JSON.stringify(childPath)}
                     checked={isChildSelected}
                     onChange={() => handleFieldSelection(fieldIndex, childPath)}
                     className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
@@ -296,7 +403,7 @@ export function ItemDetail({ slug }: ItemDetailProps) {
           </div>
 
           {/* Show selection summary */}
-          {selection && selection.selectedItem.value !== undefined && (
+          {selection?.selectedItem.value !== undefined && (
             <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded text-sm">
               <span className="text-green-800 font-medium">Selected: </span>
               <span className="text-green-700">
@@ -321,7 +428,7 @@ export function ItemDetail({ slug }: ItemDetailProps) {
 
   // Calculate total price including conditional field values
   const calculateTotalPrice = useCallback(() => {
-    const basePrice = typedItem?.price || 0;
+    const basePrice = typedItem?.price ?? 0;
     let optionsPrice = 0;
 
     // Add prices from selected conditional field options
@@ -363,7 +470,7 @@ export function ItemDetail({ slug }: ItemDetailProps) {
         <Card className="p-8 text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
           <h2 className="text-xl font-semibold mb-2">Item Not Found</h2>
-          <p className="text-gray-600">The item you're looking for doesn't exist or has been removed.</p>
+          <p className="text-gray-600">{"The item you're looking for doesn't exist or has been removed."}</p>
         </Card>
       </div>
     );
@@ -377,17 +484,20 @@ export function ItemDetail({ slug }: ItemDetailProps) {
           <Card className="overflow-hidden">
             <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
 
-            <img
+            <Image
               src={`https://api.dicebear.com/9.x/glass/svg?seed=${item.name}`}
               alt={item.name}
               className="rounded-md w-full h-full"
+              unoptimized={true}
             />
             </div>
           </Card>
         </div>
 
         {/* Product Details */}
-        <div className="space-y-6">
+        {
+          typedItem && (
+            <div className="space-y-6">
           {/* Header */}
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
@@ -412,7 +522,7 @@ export function ItemDetail({ slug }: ItemDetailProps) {
                   if (selection && typeof selection === 'object' && 'selectedItem' in selection && 'fullPath' in selection) {
                     const selectedItem = selection.selectedItem;
                     const fullPath = selection.fullPath;
-                    if (selectedItem && selectedItem.value !== undefined) {
+                    if (selectedItem?.value !== undefined) {
                       return (
                         <div key={key} className="flex justify-between">
                           <span>+ {fullPath.map((item: ConditionalFieldModel) => item.text).join(' → ')}</span>
@@ -472,7 +582,7 @@ export function ItemDetail({ slug }: ItemDetailProps) {
                   <InputNumber
                     value={quantity}
                     onChange={handleQuantityChange}
-                    max={maxQuantity || undefined}
+                    max={maxQuantity ?? undefined}
                     allowDecimals={false}
                     className="text-center"
                     onBlur={handleQuantityBlur}
@@ -508,7 +618,53 @@ export function ItemDetail({ slug }: ItemDetailProps) {
             </Button>
           </div>
         </div>
+          )
+        }
       </div>
+
+      {/* Authentication Dialog */}
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5" />
+              Sign In Required
+            </DialogTitle>
+            <DialogDescription>
+              You need to sign in to add items to your cart. This allows us to save your cart and sync it across devices.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowAuthDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              <Link href={`/register?redirect=${encodeURIComponent(getCurrentUrl())}`}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Create Account
+              </Link>
+            </Button>
+            <Button
+              asChild
+              className="w-full sm:w-auto"
+            >
+              <Link href={`/login?redirect=${encodeURIComponent(getCurrentUrl())}`}>
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

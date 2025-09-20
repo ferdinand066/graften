@@ -28,8 +28,8 @@ export function CategoryForm({ editingCategory, onSubmit, onCancel, isSubmitting
   const form = useForm<CreateCategoryInput>({
     resolver: zodResolver(createCategorySchema),
     defaultValues: {
-      name: editingCategory?.name || categoryEmptySchemaValue.name,
-      description: editingCategory?.description || categoryEmptySchemaValue.description,
+      name: editingCategory?.name ?? categoryEmptySchemaValue.name,
+      description: editingCategory?.description ?? categoryEmptySchemaValue.description,
     },
   });
 

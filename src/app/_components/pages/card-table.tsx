@@ -20,7 +20,7 @@ function CardTable<T>({
   className
 }: CardTableProps<T>) {
   if (loading) {
-    return loadingSkeleton || <div className="space-y-4">
+    return loadingSkeleton ?? <div className="space-y-4">
       {Array.from({ length: 3 }).map((_, i) => (
         <Card key={i}>
           <CardContent className="p-6">
@@ -35,7 +35,7 @@ function CardTable<T>({
   }
 
   if (data.length === 0) {
-    return emptyState || null
+    return emptyState ?? null;
   }
 
   return (

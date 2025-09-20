@@ -4,8 +4,10 @@ generator client {
 }
 
 datasource db {
-    provider = "mysql"
+    // provider = "mysql"
+    provider = "postgresql"
     url      = env("DATABASE_URL")
+    directUrl = env("DIRECT_DATABASE_URL") // used at runtime
 }
 
 model Item {
@@ -33,6 +35,9 @@ model Item {
 
     status Int @default(1)
 
+    carts CartItem[]
+    orders OrderItem[]
+
     @@index([name])
     @@index([deletedAt])
     @@index([slug])
@@ -53,6 +58,95 @@ model Category {
 
     @@index([name])
     @@index([deletedAt])
+}
+
+model CartItem {
+    id          String      @id @default(cuid())
+
+    quantity Int @default(1)
+    selectedConditionalFields Json?
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+    createdById String
+
+    item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+    itemId String
+
+    // Indexes for better query performance
+    @@index([createdById])
+    @@index([itemId])
+    @@index([createdAt])
+}
+
+model Order {
+    id          String      @id @default(cuid())
+
+    invoiceNumber String @unique
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+    createdById String
+
+    status Int @default(1)
+
+    grandTotal Float
+
+    orderItems OrderItem[]
+
+    // Indexes for better query performance
+    @@index([createdById])
+    @@index([status])
+    @@index([createdAt])
+    @@index([updatedAt])
+    @@index([grandTotal])
+    @@index([invoiceNumber]) // Already unique, but explicit index for faster lookups
+    // Composite indexes for common query patterns
+    @@index([createdById, status])
+    @@index([createdById, createdAt])
+    @@index([status, createdAt])
+    @@index([createdById, grandTotal])
+    @@index([status, grandTotal])
+    @@index([createdAt, grandTotal])
+}
+
+model OrderItem {
+    id          String      @id @default(cuid())
+
+    name String
+
+    quantity Int @default(1)
+    selectedConditionalFields Json?
+    totalPrice Float
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+    itemId String
+
+    createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+    createdById String
+
+    order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    orderId String
+
+    // Indexes for better query performance
+    @@index([orderId])
+    @@index([itemId])
+    @@index([createdById])
+    @@index([createdAt])
+    @@index([updatedAt])
+    @@index([totalPrice])
+    // Composite indexes for common query patterns
+    @@index([orderId, itemId])
+    @@index([orderId, createdAt])
+    @@index([createdById, createdAt])
+    @@index([itemId, createdAt])
+    @@index([createdById, orderId])
 }
 
 model Account {
@@ -93,6 +187,10 @@ model User {
     sessions      Session[]
     items         Item[]
     categories Category[]
+    carts CartItem[]
+
+    orders Order[]
+    orderItems OrderItem[]
 }
 
 model VerificationToken {

@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -6,10 +5,10 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import { auth, signOut } from "@/server/auth";
-import { ShoppingCart } from "lucide-react";
+import { auth } from "@/server/auth";
 import Link from "next/link";
 import { USER_ROLE } from "utils/constants";
+import { NavbarAuth } from "./navbar-auth";
 
 
 const navItemClass = navigationMenuTriggerStyle();
@@ -27,7 +26,7 @@ export async function Navbar() {
           </Link>
           <NavigationMenu>
             <NavigationMenuList>
-              {!session?.user || userRole === USER_ROLE.USER && (
+              {!(session?.user && userRole === USER_ROLE.ADMIN) && (
                 <>
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild className={navItemClass}>
@@ -65,48 +64,7 @@ export async function Navbar() {
           </NavigationMenu>
         </div>
 
-
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4">
-            {!session?.user ? (
-              <>
-                <Button asChild variant="outline">
-                  <Link href="/login">
-                    Sign In
-                  </Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/register">
-                    Get Started
-                  </Link>
-                </Button>
-              </>
-            ) : (
-              <>
-                {userRole === USER_ROLE.USER && (
-                  <Button variant="outline" size="sm">
-                    <ShoppingCart className="h-4 w-4" />
-                  </Button>
-                )}
-
-                <span className="text-muted-foreground text-sm">
-                  Welcome, {session.user.name || session.user.email}
-                </span>
-
-                <form
-                  action={async () => {
-                    "use server";
-                    await signOut({ redirectTo: "/" });
-                  }}
-                >
-                  <Button type="submit" variant="destructive" size="sm">
-                    Sign Out
-                  </Button>
-                </form>
-              </>
-            )}
-          </div>
-        </div>
+        <NavbarAuth />
       </div>
     </nav>
   );

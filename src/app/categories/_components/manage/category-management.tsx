@@ -38,7 +38,7 @@ export function CategoryManagement() {
     isSubmitting,
   } = useCategoryMutations(() => setIsCreating(false));
 
-  const categories = categoriesData?.categories || [];
+  const categories = categoriesData?.categories ?? [];
   const pagination = categoriesData?.pagination;
 
   const handleFormCancel = () => {
@@ -125,7 +125,7 @@ export function CategoryManagement() {
         isOpen={deleteDialogOpen}
         onClose={handleCancelDelete}
         onConfirm={handleConfirmDelete}
-        categoryName={categoryToDelete?.name || ""}
+        categoryName={categoryToDelete?.name ?? ""}
         isDeleting={deleteCategory.isPending}
       />
     </div>

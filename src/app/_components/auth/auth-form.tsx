@@ -22,9 +22,19 @@ import { USER_ROLE } from "utils/constants";
 
 interface AuthFormProps {
   mode: "login" | "register";
+  redirectTo?: string;
+}
+
+interface ValidationError {
+  path: (string | number)[];
+  message: string;
+  code: string;
 }
 
 function RegisterForm() {
+  const router = useRouter();
+  const { update } = useSession();
+
   const form = useForm<RegisterSchema>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: "", email: "", password: "" },
@@ -44,11 +54,11 @@ function RegisterForm() {
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result = await response.json() as { details?: ValidationError[], error?: string };
 
       if (!response.ok) {
         if (result.details) {
-          result.details.forEach((error: any) => {
+          result.details.forEach((error: ValidationError) => {
             setFormError(error.path[0] as keyof RegisterSchema, {
               type: "server",
               message: error.message,
@@ -56,7 +66,7 @@ function RegisterForm() {
           });
           throw new Error("Please fix the form errors");
         }
-        throw new Error(result.error || "Registration failed");
+        throw new Error(result.error ?? "Registration failed");
       }
 
       const signInResult = await signIn("credentials", {
@@ -73,13 +83,17 @@ function RegisterForm() {
         throw new Error("Registration successful but login failed");
       }
 
+      await update();
+
+      router.refresh();
+      setTimeout(() => router.push("/"), 100);
       return "Account created and signed in successfully!";
     };
 
     toast.promise(registerProcess(), {
       loading: "Creating your account...",
       success: "Account created and signed in successfully!",
-      error: (err) => err.message || "Registration failed",
+      error: (err: Error) => err.message || "Registration failed",
     });
   };
 
@@ -140,6 +154,7 @@ function RegisterForm() {
                   type="password"
                   placeholder="Enter your password"
                   className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:border-ring focus:outline-none focus:ring-ring"
+                  autoComplete="off"
                   {...field}
                 />
               </FormControl>
@@ -167,7 +182,7 @@ function RegisterForm() {
   );
 }
 
-function LoginForm() {
+function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const router = useRouter();
   const { update } = useSession();
 
@@ -197,18 +212,19 @@ function LoginForm() {
       }
 
       const updatedSession = await update();
-      const redirectTo = updatedSession?.user?.role === USER_ROLE.ADMIN ? "/orders" : "/items";
+      const defaultRedirect = updatedSession?.user?.role === USER_ROLE.ADMIN ? "/orders" : "/items";
+      const finalRedirect = redirectTo ?? defaultRedirect;
 
       router.refresh();
-      setTimeout(() => router.push(redirectTo), 100);
+      setTimeout(() => router.push(finalRedirect), 100);
 
       return "Welcome back! Signed in successfully!";
     };
 
-    toast.promise(loginProcess, {
+    toast.promise(loginProcess(), {
       loading: "Signing you in...",
       success: "Welcome back! Signed in successfully!",
-      error: (err) => err.message || "Login failed",
+      error: (err: Error) => err.message || "Login failed",
     });
   };
 
@@ -276,7 +292,7 @@ function LoginForm() {
   );
 }
 
-export function AuthForm({ mode }: AuthFormProps) {
+export function AuthForm({ mode, redirectTo }: AuthFormProps) {
   return (
     <div className="w-full max-w-md space-y-6 bg-card p-8 rounded-2xl shadow-2xl border border-border">
       <div className="text-center">
@@ -290,12 +306,12 @@ export function AuthForm({ mode }: AuthFormProps) {
         </p>
       </div>
 
-      {mode === "register" ? <RegisterForm /> : <LoginForm />}
+      {mode === "register" ? <RegisterForm /> : <LoginForm redirectTo={redirectTo} />}
 
       <div className="text-center">
         {mode === "login" ? (
           <p className="text-muted-foreground">
-            Don't have an account?{" "}
+            {"Don't have an account? "}
             <Link href="/register" className="text-primary hover:text-primary/90 underline font-medium">
               Sign up here
             </Link>

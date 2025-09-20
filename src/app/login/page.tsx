@@ -4,11 +4,16 @@ import { auth } from "@/server/auth";
 import { AuthForm } from "@/app/_components/auth/auth-form";
 import { Button } from "@/components/ui/button";
 
-export default async function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{ redirect?: string }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth();
+  const { redirect: redirectTo } = await searchParams;
 
   if (session?.user) {
-    redirect("/");
+    redirect(redirectTo ?? "/");
   }
 
   return (
@@ -16,10 +21,10 @@ export default async function LoginPage() {
 
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          <AuthForm mode="login" />
+          <AuthForm mode="login" redirectTo={redirectTo} />
           <div className="text-center mt-6">
             <div className="flex items-center justify-center gap-2 text-sm">
-              <span className="text-muted-foreground">Don't have an account?</span>
+              <span className="text-muted-foreground">{`Don't have an account?`}</span>
               <Button asChild variant="outline" size="sm">
                 <Link href="/register">
                   Sign Up

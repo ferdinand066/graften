@@ -42,15 +42,15 @@ export function ItemForm({ editingItem, onSubmit, onCancel, isSubmitting }: Item
   const form = useForm<CreateItemInput>({
     resolver: zodResolver(createItemSchema),
     defaultValues: {
-      name: editingItem?.name || itemEmptySchemaValue.name,
-      description: editingItem?.description || itemEmptySchemaValue.description,
-      price: editingItem?.price || itemEmptySchemaValue.price,
-      minimumQuantity: editingItem?.minimumQuantity || itemEmptySchemaValue.minimumQuantity,
-      maximumQuantity: editingItem?.maximumQuantity || itemEmptySchemaValue.maximumQuantity,
-      circulation: editingItem?.circulation || itemEmptySchemaValue.circulation,
-      status: editingItem?.status || itemEmptySchemaValue.status,
-      conditionalFields: editingItem?.conditionalFields || null,
-      categoryId: editingItem?.category.id || itemEmptySchemaValue.categoryId,
+      name: editingItem?.name ?? itemEmptySchemaValue.name,
+      description: editingItem?.description ?? itemEmptySchemaValue.description,
+      price: editingItem?.price ?? itemEmptySchemaValue.price,
+      minimumQuantity: editingItem?.minimumQuantity ?? itemEmptySchemaValue.minimumQuantity,
+      maximumQuantity: editingItem?.maximumQuantity ?? itemEmptySchemaValue.maximumQuantity,
+      circulation: editingItem?.circulation ?? itemEmptySchemaValue.circulation,
+      status: editingItem?.status ?? itemEmptySchemaValue.status,
+      conditionalFields: editingItem?.conditionalFields ?? null,
+      categoryId: editingItem?.category.id ?? itemEmptySchemaValue.categoryId,
     },
   });
 

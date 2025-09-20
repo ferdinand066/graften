@@ -124,7 +124,7 @@ export function ItemManagement() {
         isOpen={deleteDialogOpen}
         onClose={handleCancelDelete}
         onConfirm={handleConfirmDelete}
-        itemName={itemToDelete?.name || ""}
+        itemName={itemToDelete?.name ?? ""}
         isDeleting={deleteItem.isPending}
       />
     </div>

@@ -53,7 +53,7 @@ export function useItemMutations(onUpdateSuccess?: () => void) {
       toast.promise(updatePromise, {
         loading: "Updating item...",
         success: "Item updated successfully!",
-        error: (err) => `Failed to update item: ${err.message}`,
+        error: (err: Error) => `Failed to update item: ${err.message}`,
       });
     } else {
       const createPromise = createItem.mutateAsync({
@@ -71,7 +71,7 @@ export function useItemMutations(onUpdateSuccess?: () => void) {
       toast.promise(createPromise, {
         loading: "Creating item...",
         success: "Item created successfully!",
-        error: (err) => `Failed to create item: ${err.message}`,
+        error: (err: Error) => `Failed to create item: ${err.message}`,
       });
     }
   };
@@ -96,7 +96,7 @@ export function useItemMutations(onUpdateSuccess?: () => void) {
       toast.promise(deletePromise, {
         loading: `Deleting "${itemToDelete.name}"...`,
         success: `"${itemToDelete.name}" deleted successfully!`,
-        error: (err) => `Failed to delete "${itemToDelete.name}": ${err.message}`,
+        error: (err: Error) => `Failed to delete "${itemToDelete.name}": ${err.message}`,
       });
     }
   };

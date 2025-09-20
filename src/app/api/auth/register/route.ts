@@ -1,13 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { z } from "zod";
 import { db } from "@/server/db";
+import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
+import { registerSchema, type RegisterSchema } from "schema/auth/register.schema";
 import { USER_ROLE } from "utils/constants";
-import { registerSchema } from "schema/auth/register.schema";
+import { z } from "zod";
+
+import type { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json() as RegisterSchema;
     const { name, email, password } = registerSchema.parse(body);
 
     const existingUser = await db.user.findUnique({
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
 
     return NextResponse.json(
       {

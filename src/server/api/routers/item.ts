@@ -7,7 +7,7 @@ import {
   protectedProcedure,
   publicProcedure
 } from "@/server/api/trpc";
-import { createItemSchema, updateItemSchema } from "schema/item.schema";
+import { createItemSchema, updateItemSchema, type ConditionalFieldModel } from "schema/item.schema";
 import { executePaginatedQuery } from "@/server/utils/pagination";
 
 export const itemRouter = createTRPCRouter({
@@ -26,7 +26,7 @@ export const itemRouter = createTRPCRouter({
           maximumQuantity: input.maximumQuantity,
           circulation: input.circulation,
           status: input.status,
-          conditionalFields: input.conditionalFields ? JSON.stringify(input.conditionalFields) : undefined,
+          conditionalFields: input.conditionalFields ? JSON.parse(JSON.stringify(input.conditionalFields)) as ConditionalFieldModel[] : undefined,
           createdBy: { connect: { id: ctx.session.user.id } },
           category: { connect: { id: input.categoryId } },
         },
@@ -135,7 +135,7 @@ export const itemRouter = createTRPCRouter({
         where: { id },
         data: {
           ...updateData,
-          conditionalFields: updateData.conditionalFields ? JSON.stringify(updateData.conditionalFields) : undefined,
+          conditionalFields: updateData.conditionalFields ? JSON.parse(JSON.stringify(updateData.conditionalFields)) as ConditionalFieldModel[] : undefined,
         },
       });
     }),
@@ -188,7 +188,7 @@ export const itemRouter = createTRPCRouter({
           deletedAt: null,
           name: {
             contains: input.query,
-            search: "insensitive",
+            mode: "insensitive",
           },
         },
         orderBy: { createdAt: "desc" },

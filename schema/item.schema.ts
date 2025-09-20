@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const conditionalFieldSchema: z.ZodType<{
+export const conditionalFieldSchema: z.ZodType<{
   text: string;
   value?: number;
   children?: ConditionalFieldModel[];

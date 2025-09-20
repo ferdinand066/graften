@@ -52,7 +52,7 @@ export function useCategoryMutations(onUpdateSuccess?: () => void) {
       toast.promise(updatePromise, {
         loading: "Updating category...",
         success: "Category updated successfully!",
-        error: (err) => `Failed to update category: ${err.message}`,
+        error: (err: Error) => `Failed to update category: ${err.message}`,
       });
     } else {
       const createPromise = createCategory.mutateAsync({
@@ -63,7 +63,7 @@ export function useCategoryMutations(onUpdateSuccess?: () => void) {
       toast.promise(createPromise, {
         loading: "Creating category...",
         success: "Category created successfully!",
-        error: (err) => `Failed to create category: ${err.message}`,
+        error: (err: Error) => `Failed to create category: ${err.message}`,
       });
     }
   };
@@ -88,7 +88,7 @@ export function useCategoryMutations(onUpdateSuccess?: () => void) {
       toast.promise(deletePromise, {
         loading: `Deleting "${categoryToDelete.name}"...`,
         success: `"${categoryToDelete.name}" deleted successfully!`,
-        error: (err) => `Failed to delete "${categoryToDelete.name}": ${err.message}`,
+        error: (err: Error) => `Failed to delete "${categoryToDelete.name}": ${err.message}`,
       });
     }
   };

@@ -7,6 +7,7 @@ import {
 } from "@/server/api/trpc";
 import { createCategorySchema, deleteCategorySchema, updateCategorySchema } from "schema/category.schema";
 import { executePaginatedQuery } from "@/server/utils/pagination";
+import type { CategoryModel } from "types/category";
 
 export const categoryRouter = createTRPCRouter({
   create: adminProcedure
@@ -32,7 +33,7 @@ export const categoryRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const result = await executePaginatedQuery({
+      const result = await executePaginatedQuery<CategoryModel>({
         db: ctx.db,
         model: "category",
         input,

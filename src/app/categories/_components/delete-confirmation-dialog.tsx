@@ -31,7 +31,7 @@ export function DeleteConfirmationDialog({
         <DialogHeader>
           <DialogTitle>Delete Category</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the category "{categoryName}"? This action cannot be undone and will remove all associated items.
+            Are you sure you want to delete the category {`"${categoryName}"`}? This action cannot be undone and will remove all associated items.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

@@ -19,22 +19,28 @@ export interface PaginationResult<T> {
   };
 }
 
-export interface PaginatedQueryOptions<T> {
+// Define a more specific type for Prisma model operations
+type PrismaModel = {
+  findMany: (args?: Record<string, unknown>) => Promise<unknown[]>;
+  count: (args?: Record<string, unknown>) => Promise<number>;
+};
+
+export interface PaginatedQueryOptions {
   db: PrismaClient;
   model: keyof PrismaClient;
   input: PaginationInput;
-  include?: any;
-  orderBy?: any;
-  where?: any;
-  select?: any;
+  include?: Record<string, unknown>;
+  orderBy?: Record<string, unknown>;
+  where?: Record<string, unknown>;
+  select?: Record<string, unknown>;
   includeSoftDeleted?: boolean; // Optional flag to include soft-deleted records
 }
 
-export async function executePaginatedQuery<T>(
-  options: PaginatedQueryOptions<T>
+export async function executePaginatedQuery<T extends { id: string }>(
+  options: PaginatedQueryOptions
 ): Promise<PaginationResult<T>> {
   const { db, model, input, include, orderBy = { createdAt: "desc" }, where, select, includeSoftDeleted = false } = options;
-  const dbModel = db[model] as any;
+  const dbModel = db[model] as PrismaModel;
 
   // Add soft delete filtering to where clause
   const softDeleteFilter = includeSoftDeleted ? {} : { deletedAt: null };
@@ -49,12 +55,12 @@ export async function executePaginatedQuery<T>(
       include,
       where: combinedWhere,
       select,
-    });
+    }) as T[];
 
     let nextCursor: typeof input.cursor | undefined = undefined;
     if (items.length > input.limit) {
       const nextItem = items.pop();
-      nextCursor = nextItem!.id;
+      nextCursor = nextItem?.id;
     }
 
     return {
@@ -73,7 +79,7 @@ export async function executePaginatedQuery<T>(
         include,
         where: combinedWhere,
         select,
-      }),
+      }) as Promise<T[]>,
       dbModel.count({ where: combinedWhere }),
     ]);
 

@@ -5,6 +5,7 @@ import DiscordProvider from "next-auth/providers/discord";
 import bcrypt from "bcryptjs";
 
 import { db } from "@/server/db";
+import type { User } from "@prisma/client";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
@@ -34,7 +35,7 @@ export const authConfig = {
           }
         });
 
-        if (!user || !user.password) {
+        if (!user?.password) {
           return null;
         }
 
@@ -69,7 +70,7 @@ export const authConfig = {
     jwt: ({ token, user }) => {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
+        token.role = (user as User).role;
       }
       return token;
     },

@@ -58,7 +58,7 @@ const InputNumber = forwardRef<HTMLInputElement, InputNumberProps>(
         let finalNumericValue = numericValue;
 
         if (min !== undefined) {
-          finalNumericValue = finalNumericValue || 0;
+          finalNumericValue = finalNumericValue ?? 0;
         }
 
         console.log({numericValue})
@@ -78,7 +78,7 @@ const InputNumber = forwardRef<HTMLInputElement, InputNumberProps>(
           const decimalPart = parts[1];
 
           // Format the integer part with commas
-          const formattedInt = new Intl.NumberFormat("en-US").format(parseInt(intPart || "0", 10));
+          const formattedInt = new Intl.NumberFormat("en-US").format(parseInt(intPart ?? "0", 10));
 
           if (decimalPart !== undefined) {
             // Preserve decimal part exactly as typed
@@ -105,8 +105,8 @@ const InputNumber = forwardRef<HTMLInputElement, InputNumberProps>(
         const prevBefore = displayValue.slice(0, Math.min(cursorPos, displayValue.length));
         const newBefore = formattedInput.slice(0, Math.min(cursorPos, formattedInput.length));
 
-        const prevCommas = (prevBefore.match(/,/g) || []).length;
-        const newCommas = (newBefore.match(/,/g) || []).length;
+        const prevCommas = (prevBefore.match(/,/g) ?? []).length;
+        const newCommas = (newBefore.match(/,/g) ?? []).length;
         const diff = newCommas - prevCommas;
 
         setDisplayValue(formattedInput);
@@ -114,7 +114,7 @@ const InputNumber = forwardRef<HTMLInputElement, InputNumberProps>(
 
         // Adjust cursor position after formatting
         requestAnimationFrame(() => {
-          const currentInput = inputRef.current || input;
+          const currentInput = inputRef.current ?? input;
           if (currentInput) {
             const newCursorPos = Math.min(cursorPos + diff, formattedInput.length);
             currentInput.setSelectionRange(newCursorPos, newCursorPos);
