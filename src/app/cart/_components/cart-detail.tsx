@@ -306,6 +306,7 @@ export default function CartDetail() {
                     width={80}
                     height={80}
                     className="w-full h-full rounded-md"
+                    unoptimized={true}
                   />
                 </div>
 

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { conditionalFieldSchema, type ConditionalFieldModel } from "schema/item.schema";
+import { executePaginatedQuery } from "@/server/utils/pagination";
+import type { OrderModel } from "types/order";
 
 const checkoutSchema = z.object({
   cartItems: z.array(z.object({
@@ -78,14 +80,15 @@ export const orderRouter = createTRPCRouter({
     .input(
       z.object({
         limit: z.number().min(1).max(100).default(10),
+        page: z.number().min(1).default(1),
         cursor: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
-      const orders = await ctx.db.order.findMany({
-        where: {
-          createdById: ctx.session.user.id,
-        },
+      const result = await executePaginatedQuery<OrderModel>({
+        db: ctx.db,
+        model: "order",
+        input,
         include: {
           orderItems: {
             include: {
@@ -103,22 +106,17 @@ export const orderRouter = createTRPCRouter({
             },
           },
         },
-        orderBy: {
-          createdAt: "desc",
+        where: {
+          createdById: ctx.session.user.id,
         },
-        take: input.limit + 1,
-        cursor: input.cursor ? { id: input.cursor } : undefined,
+        orderBy: { createdAt: "desc" },
+        includeSoftDeleted: true, // Orders don't have soft delete, so include all
       });
 
-      let nextCursor: string | undefined = undefined;
-      if (orders.length > input.limit) {
-        const nextItem = orders.pop();
-        nextCursor = nextItem!.id;
-      }
-
       return {
-        orders,
-        nextCursor,
+        orders: result.items,
+        nextCursor: result.nextCursor,
+        pagination: result.pagination,
       };
     }),
 

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { USER_ROLE } from "utils/constants";
 import { CartBadge } from "./cart-badge";
 import { LogoutButton } from "./logout-button";
+import { HistoryBadge } from "./history-badge";
 
 export function NavbarAuth() {
   const { data: session } = useSession();
@@ -14,7 +15,12 @@ export function NavbarAuth() {
   return (
     <div className="flex items-center gap-6">
       <div className="flex items-center gap-4">
-        {(session?.user && userRole === USER_ROLE.USER) && <CartBadge />}
+        {(session?.user && userRole === USER_ROLE.USER) && (
+          <>
+            <CartBadge />
+            <HistoryBadge />
+          </>
+        )}
         {!session?.user ? (
           <>
             <Button asChild variant="outline">

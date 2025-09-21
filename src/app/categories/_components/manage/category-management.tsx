@@ -111,7 +111,6 @@ export function CategoryManagement() {
             )}
           />
 
-
           {pagination && (
             <DataPagination
               pagination={pagination}

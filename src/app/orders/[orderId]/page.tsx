@@ -111,7 +111,7 @@ export default function OrderDetailPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -156,7 +156,9 @@ export default function OrderDetailPage() {
                   <Image
                     src={`https://api.dicebear.com/9.x/glass/svg?seed=${orderItem.name}`}
                     alt={orderItem.name}
-                    className="w-full h-full rounded-md"
+                    className="rounded-md"
+                    width={64}
+                    height={64}
                     unoptimized={true}
                   />
                 </div>
