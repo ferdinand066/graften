@@ -482,12 +482,12 @@ export function ItemDetail({ slug }: ItemDetailProps) {
         {/* Product Image/Placeholder */}
         <div className="space-y-4">
           <Card className="overflow-hidden">
-            <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-
+            <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200">
             <Image
               src={`https://api.dicebear.com/9.x/glass/svg?seed=${item.name}`}
               alt={item.name}
-              className="rounded-md w-full h-full"
+              fill
+              className="rounded-md object-cover"
               unoptimized={true}
             />
             </div>
